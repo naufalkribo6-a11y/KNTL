@@ -1,0 +1,89 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/jensonhirst/Orion/main/source')))()
+local Window = OrionLib:MakeWindow({
+    Name = "LOAD HUB 🔱 | tubles93_txt", 
+    HidePremium = false, 
+    SaveConfig = true, 
+    ConfigFolder = "tubles93_RawHub",
+    IntroText = "tubles93_txt RAW SCRIPTS"
+})
+
+-- [[ 1. TAB: RAW SCRIPTS (REQUEST LU) ]] --
+local RawTab = Window:MakeTab({
+	Name = "Raw Scripts",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+RawTab:AddSection({Name = "The Big 5"})
+
+RawTab:AddButton({
+	Name = "Free Cam (Universal)",
+	Callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-FREE-CAM-123525"))()
+  	end    
+})
+
+RawTab:AddButton({
+	Name = "Corner ESP (Wallhack)",
+	Callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Universal-Corner-ESP-Script-145806"))()
+  	end    
+})
+
+RawTab:AddButton({
+	Name = "System Broken (2026 Fix)",
+	Callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-SystemBroken-New-2026-85435"))()
+  	end    
+})
+
+RawTab:AddButton({
+	Name = "Fly V3 X (GUI)",
+	Callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Fly-V3-X-132770"))()
+  	end    
+})
+
+RawTab:AddButton({
+	Name = "Tavo Hub (Multi-Features)",
+	Callback = function()
+        loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Tavo-Hub-137658"))()
+  	end    
+})
+
+-- [[ 2. TAB: EXTRA DEWA (BIAR GENAP 8) ]] --
+local ExtraTab = Window:MakeTab({
+	Name = "Extra Powers",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+ExtraTab:AddSection({Name = "Essential Tools"})
+
+ExtraTab:AddButton({
+	Name = "Infinite Yield (FE Admin)",
+	Callback = function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+  	end    
+})
+
+ExtraTab:AddButton({
+	Name = "Copy Avatar Player",
+	Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/IceBear-Kazu/IceHub/main/CopyAvatar.lua"))()
+  	end    
+})
+
+ExtraTab:AddButton({
+	Name = "Anti-AFK (Idle Fix)",
+	Callback = function()
+        local vu = game:GetService("VirtualUser")
+        game:GetService("Players").LocalPlayer.Idled:connect(function()
+            vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+            wait(1)
+            vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        end)
+  	end    
+})
+
+OrionLib:Init()
