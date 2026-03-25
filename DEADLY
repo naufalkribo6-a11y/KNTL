@@ -1,0 +1,208 @@
+-- [[ PRISONRE0M : QUANTUM SHIELD V26 - CHAO-- [[S EDITION (CLEAN VERSION) ]] --
+-- Update: Fixed Span Bugs + Auto-Void on Sit Logic
+-- Modifikasi: Judul ditambahin "tubles93_txt" di samping (sesuai permintaan)
+
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local Gui = Instance.new("ScreenGui", gethui())
+local targetPlayer = nil
+local active = false
+local deathPenalty = false
+local remoteCache = {}
+local currentIdx = 1
+
+-- [[ UI HELPER: GLOW EFFECT ]] --
+local function applyGlow(gradient)
+    task.spawn(function()
+        while true do
+            local t = TweenService:Create(gradient, TweenInfo.new(2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {Offset = Vector2.new(1, 0)})
+            t:Play()
+            task.wait(2)
+            gradient.Offset = Vector2.new(-1, 0)
+        end
+    end)
+end
+
+-- [[ MAIN GUI (EMAS) ]] --
+local Main = Instance.new("Frame", Gui)
+Main.Size = UDim2.new(0, 220, 0, 110)
+Main.Position = UDim2.new(0.5, -110, 0.5, -55)
+Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true 
+Main.ClipsDescendants = false
+
+local GoldGrad = Instance.new("UIGradient", Main)
+GoldGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(184, 134, 11)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(184, 134, 11))
+})
+applyGlow(GoldGrad)
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, -30, 0, 35)
+Title.BackgroundTransparency = 1
+Title.Text = "DEADLY SENTENLSING | tubles93_txt"   -- <-- Diubah menjadi huruf kapital
+Title.TextColor3 = Color3.fromRGB(139, 0, 0)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 16
+
+local PlusBtn = Instance.new("TextButton", Main)
+PlusBtn.Size = UDim2.new(0, 25, 0, 25)
+PlusBtn.Position = UDim2.new(1, -30, 0, 5)
+PlusBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+PlusBtn.Text = "+"
+PlusBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
+PlusBtn.Font = Enum.Font.SourceSansBold
+PlusBtn.TextSize = 20
+Instance.new("UICorner", PlusBtn)
+
+local PenaltyFrame = Instance.new("Frame", Main)
+PenaltyFrame.Size = UDim2.new(1, 0, 0, 0)
+PenaltyFrame.Position = UDim2.new(0, 0, 1, 0)
+PenaltyFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+PenaltyFrame.BorderSizePixel = 0
+PenaltyFrame.Visible = false
+PenaltyFrame.ClipsDescendants = true
+
+local RedGrad = Instance.new("UIGradient", PenaltyFrame)
+RedGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 0, 0)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 0, 0))
+})
+applyGlow(RedGrad)
+
+local PenaltyLabel = Instance.new("TextLabel", PenaltyFrame)
+PenaltyLabel.Size = UDim2.new(1, 0, 1, 0)
+PenaltyLabel.BackgroundTransparency = 1
+PenaltyLabel.Text = "DEATH PENALTY: CHAOS"
+PenaltyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+PenaltyLabel.Font = Enum.Font.SourceSansItalic
+PenaltyLabel.TextSize = 14
+
+local Box = Instance.new("TextBox", Main)
+Box.Size = UDim2.new(0.9, 0, 0, 25)
+Box.Position = UDim2.new(0.05, 0, 0.4, 0)
+Box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Box.PlaceholderText = "Target Username"
+Box.Text = ""
+Box.TextColor3 = Color3.fromRGB(255, 215, 0)
+
+local Button = Instance.new("TextButton", Main)
+Button.Size = UDim2.new(0.9, 0, 0, 30)
+Button.Position = UDim2.new(0.05, 0, 0.7, 0)
+Button.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Button.Text = "ACTIVATE"
+Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", Button)
+
+-- [[ ENGINE ]] --
+
+local function updateRemotes()
+    local temp = {}
+    local wsCom = Workspace:FindFirstChild("WorkspaceCom")
+    if not wsCom then return end
+    for _, cat in pairs(wsCom:GetChildren()) do
+        for _, p in pairs(cat:GetChildren()) do
+            if p:FindFirstChild("SetCurrentCFrame") then table.insert(temp, p.SetCurrentCFrame) end
+        end
+    end
+    remoteCache = temp
+end
+
+local function quantumSync()
+    if not targetPlayer or not targetPlayer.Character or #remoteCache == 0 then return end
+    local char = targetPlayer.Character
+    local tRoot = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not tRoot or not hum then return end
+
+    local distToFloor = (hum.HipHeight + (tRoot.Size.Y / 2))
+    local velocity = tRoot.AssemblyLinearVelocity
+    local predictedPos = tRoot.CFrame + (velocity * 0.175)
+    
+    -- Logika VOID: Jika target terdeteksi duduk (Sit)
+    if hum.Sit then
+        predictedPos = CFrame.new(predictedPos.X, -50000, predictedPos.Z)
+    end
+    
+    local remote = remoteCache[currentIdx]
+    if remote then
+        local mIdx = ((currentIdx - 1) % 10) + 1
+        local fPos
+        
+        if deathPenalty then
+            -- [[ LOGIKA PENALTY: CHAOS SPIN ]] --
+            local speed = tick() * 40
+            local randomSpin = CFrame.Angles(
+                math.sin(speed + (mIdx * 0.5)) * 5,
+                math.cos(speed + (mIdx * 0.8)) * 5, 
+                math.tan(speed + (mIdx * 0.2)) * 0.5
+            )
+            fPos = predictedPos * randomSpin
+        else
+            -- [[ LOGIKA NORMAL: KOTAK PELINDUNG ]] --
+            local Y_Ground = -distToFloor
+            local Y_Top = 10
+            
+            if mIdx == 1 then fPos = predictedPos * CFrame.new(0, Y_Ground, -18)
+            elseif mIdx == 2 then fPos = predictedPos * CFrame.new(0, Y_Ground, 14)
+            elseif mIdx == 3 then fPos = predictedPos * CFrame.new(7.5, Y_Ground, -10) * CFrame.Angles(0, 1.57, 0)
+            elseif mIdx == 4 then fPos = predictedPos * CFrame.new(7.5, Y_Ground, 6) * CFrame.Angles(0, 1.57, 0)
+            elseif mIdx == 5 then fPos = predictedPos * CFrame.new(-7.5, Y_Ground, -10) * CFrame.Angles(0, 1.57, 0)
+            elseif mIdx == 6 then fPos = predictedPos * CFrame.new(-7.5, Y_Ground, 6) * CFrame.Angles(0, 1.57, 0)
+            elseif mIdx == 7 then fPos = predictedPos * CFrame.new(0, Y_Ground, -2) * CFrame.Angles(1.57, 0, 0)
+            elseif mIdx == 8 then fPos = predictedPos * CFrame.new(0, Y_Ground, -18) * CFrame.Angles(1.57, 0, 0)
+            elseif mIdx == 9 then fPos = predictedPos * CFrame.new(0, Y_Top, -2) * CFrame.Angles(1.57, 0, 0)
+            elseif mIdx == 10 then fPos = predictedPos * CFrame.new(0, Y_Top, -18) * CFrame.Angles(1.57, 0, 0)
+            end
+        end
+
+        task.spawn(function() pcall(function() remote:InvokeServer(fPos) end) end)
+    end
+    currentIdx = (currentIdx % #remoteCache) + 1
+end
+
+-- [[ UI EVENTS ]] --
+
+PlusBtn.MouseButton1Click:Connect(function()
+    deathPenalty = not deathPenalty
+    if deathPenalty then
+        PenaltyFrame.Visible = true
+        PlusBtn.Text = "-"
+        TweenService:Create(PenaltyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {Size = UDim2.new(1, 0, 0, 40)}):Play()
+    else
+        PlusBtn.Text = "+"
+        local t = TweenService:Create(PenaltyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quart), {Size = UDim2.new(1, 0, 0, 0)})
+        t:Play()
+        t.Completed:Connect(function() if not deathPenalty then PenaltyFrame.Visible = false end end)
+    end
+end)
+
+Box.FocusLost:Connect(function(enter)
+    if enter then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Name:lower():find(Box.Text:lower()) or p.DisplayName:lower():find(Box.Text:lower()) then
+                targetPlayer = p
+                Box.Text = p.DisplayName
+                break
+            end
+        end
+    end
+end)
+
+Button.MouseButton1Click:Connect(function()
+    active = not active
+    Button.Text = active and "STOP" or "ACTIVATE"
+    if active then updateRemotes() end
+end)
+
+RunService.Heartbeat:Connect(function() if active then quantumSync() end end)
+task.spawn(function() while true do if active then updateRemotes() end task.wait(4) end end)
